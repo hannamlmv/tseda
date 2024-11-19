@@ -49,10 +49,8 @@ class OnewayStats(View):
     window_size = param.Integer(
         default=10000, bounds=(1, None), doc="Size of window"
     )
-    sample_sets = param.String(
-        default="[0,1]",
-        doc="Comma-separated list of sample sets (0-indexed) to plot.",
-    )
+
+    multi_choice = pn.widgets.MultiChoice(name='Sample sets', description="Choose sample sets to visualize")
 
     @property
     def tooltip(self):
@@ -62,14 +60,25 @@ class OnewayStats(View):
                 "in the sample set editor page."
             )
         )
+    
+    def __init__(self, **params):
+            super().__init__(**params)
+            
+            # Set the default value for sample_sets based on datastore
+            _, sample_sets = self.datastore.individuals_table.sample_sets()
+            sample_sets_list = list(sample_sets.keys())
+            self.multi_choice.options = sample_sets_list
+            self.multi_choice.value = sample_sets_list
 
-    @param.depends("mode", "statistic", "window_size", "sample_sets")
+    @param.depends("mode", "statistic", "window_size", "multi_choice", watch = True)
     def __panel__(self):
         data = None
         windows = make_windows(
             self.window_size, self.datastore.tsm.ts.sequence_length
         )
-        sample_sets_list = eval_sample_sets(self.sample_sets)
+
+        sample_sets_list = self.multi_choice.value
+        
         try:
             sample_sets = self.datastore.individuals_table.get_sample_sets(
                 sample_sets_list
@@ -79,7 +88,7 @@ class OnewayStats(View):
 
         if self.statistic == "Tajimas_D":
             data = self.datastore.tsm.ts.Tajimas_D(
-                sample_sets, windows=windows, mode=self.mode
+                sample_sets_list, windows=windows, mode=self.mode
             )
         elif self.statistic == "diversity":
             data = self.datastore.tsm.ts.diversity(
@@ -93,7 +102,7 @@ class OnewayStats(View):
             columns=[
                 self.datastore.sample_sets_table.names[i]
                 for i in sample_sets_list
-            ],
+            ]
         )
         position = hv.Dimension(
             "position",
@@ -120,7 +129,7 @@ class OnewayStats(View):
             self.param.mode,
             self.param.statistic,
             self.param.window_size,
-            self.param.sample_sets,
+            self.multi_choice,
             collapsed=True,
             title="Oneway statistics plotting options",
             header_background=config.SIDEBAR_BACKGROUND,
