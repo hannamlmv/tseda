@@ -486,13 +486,3 @@ class DataStore(Viewer):
         df = pd.concat(dflist)
         df.set_index(["haplotype", "start", "end"], inplace=True)
         return df
-
-
-
-    # Not needed? Never used?
-    def __panel__(self):
-
-        return pn.Row(
-            self.individuals_table,
-            self.sample_sets_table,
-        )
