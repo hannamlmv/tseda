@@ -103,7 +103,6 @@ class IndividualsTable(Viewer):
             "longitude",
             "latitude",
         ]
-        # print(self.columns)
         self.columns = self.columns if self.columns else default_columns
         print(self.columns)
         self.editors = {k: None for k in self.columns}
@@ -119,7 +118,6 @@ class IndividualsTable(Viewer):
         self.formatters = {"selected": {"type": "tickCross"}}
         self.table.set_index(["id"], inplace=True)
         self.data = self.param.table.rx()
-        # print(self.data.rx.value)
         self.sample_select.options = self.sample_set_indices()
         self.sample_select.value = self.sample_set_indices()
 
@@ -212,8 +210,7 @@ class IndividualsTable(Viewer):
             else:
                 logger.info("No population defined")
         data = self.data[self.columns]
-        print("creating table")
-        print(self.columns)
+
         table = pn.widgets.Tabulator(
             data,
             pagination="remote",
@@ -240,7 +237,6 @@ class IndividualsTable(Viewer):
         )
 
     modification_header = pn.pane.Markdown("#### Batch reassign indivuduals:")
-
     def modification_sidebar(self):
         return pn.Card(
             pn.Column(
@@ -420,19 +416,45 @@ class DataStore(Viewer):
     tsm = param.ClassSelector(class_=model.TSModel)
     individuals_table = param.ClassSelector(class_=IndividualsTable)
     sample_sets_table = param.ClassSelector(class_=SampleSetsTable)
+    combined_table = param.ClassSelector(class_=IndividualsTable)
 
     views = param.List(constant=True)
 
     @property
-    def color(self):
-        """Return colors of selected individuals"""
-        color = pd.merge(
+    def combine_tables(self):
+        """Combine individuals and sample sets table."""
+        combined = pd.merge(
             self.individuals_table.data.rx.value,
             self.sample_sets_table.data.rx.value,
             left_on="sample_set_id",
-            right_index=True,
+            right_index=True,  # Use the index from sample_sets_table or individuals? what index is it?
+            suffixes=('_indiv', '_sample')
         )
-        return color.loc[color.selected].color
+        combined.reset_index(inplace=True)
+        combined['id'] = combined.index
+        combined.rename(columns={'index': 'id'}, inplace=True)  # Rename the 'index' column to 'id'
+        return combined
+    
+    def __init__(self, **params):
+        super().__init__(**params)
+        combined_data = self.combine_tables
+        combined_columns = [
+            "color",
+            "sample_set_id",
+            "name_sample",
+            "population",
+            "name_indiv",
+            "selected",
+            "longitude",
+            "latitude",
+        ]
+        self.individuals_table = IndividualsTable(table=combined_data, columns = combined_columns) # combined
+        
+    @property
+    def color(self):
+        """Return colours of selected individuals."""
+        print()
+        return self.individuals_table.data.rx.value.loc[self.individuals_table.data.rx.value.selected].color # combined
 
     def haplotype_gnn(self, focal_ind, windows=None):
         samples, sample_sets = self.individuals_table.sample_sets()
@@ -465,8 +487,11 @@ class DataStore(Viewer):
         df.set_index(["haplotype", "start", "end"], inplace=True)
         return df
 
+
+
     # Not needed? Never used?
     def __panel__(self):
+
         return pn.Row(
             self.individuals_table,
             self.sample_sets_table,
