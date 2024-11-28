@@ -45,26 +45,9 @@ class IndividualsTable(Viewer):
     """Class to hold and view individuals and perform calculations to
     change filters."""
 
-    columns = [
-        "name",
-        "population",
-        "sample_set_id",
-        "selected",
-        "longitude",
-        "latitude",
-    ]
-    editors = {k: None for k in columns}  # noqa
-    editors["sample_set_id"] = {
-        "type": "number",
-        "valueLookup": True,
-    }
-    editors["selected"] = {
-        "type": "list",
-        "values": [False, True],
-        "valuesLookup": True,
-    }
-    formatters = {"selected": {"type": "tickCross"}}
-
+    columns = param.List(default=[], doc="Columns for the table")
+    editors = param.Dict(default={}, doc="Column editors")
+    formatters = param.Dict(default={}, doc="Column formatters")
     table = param.DataFrame()
 
     page_size = param.Selector(
@@ -112,8 +95,31 @@ class IndividualsTable(Viewer):
 
     def __init__(self, **params):
         super().__init__(**params)
+        default_columns = [
+            "name",
+            "population",
+            "sample_set_id",
+            "selected",
+            "longitude",
+            "latitude",
+        ]
+        # print(self.columns)
+        self.columns = self.columns if self.columns else default_columns
+        print(self.columns)
+        self.editors = {k: None for k in self.columns}
+        self.editors["sample_set_id"] = {
+            "type": "number",
+            "valueLookup": True,
+        }
+        self.editors["selected"] = {
+            "type": "list",
+            "values": [False, True],
+            "valuesLookup": True,
+        }
+        self.formatters = {"selected": {"type": "tickCross"}}
         self.table.set_index(["id"], inplace=True)
         self.data = self.param.table.rx()
+        # print(self.data.rx.value)
         self.sample_select.options = self.sample_set_indices()
         self.sample_select.value = self.sample_set_indices()
 
@@ -206,7 +212,8 @@ class IndividualsTable(Viewer):
             else:
                 logger.info("No population defined")
         data = self.data[self.columns]
-
+        print("creating table")
+        print(self.columns)
         table = pn.widgets.Tabulator(
             data,
             pagination="remote",
