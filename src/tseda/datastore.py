@@ -114,7 +114,10 @@ class IndividualsTable(Viewer):
             "values": [False, True],
             "valuesLookup": True,
         }
-        self.formatters = {"selected": {"type": "tickCross"}}
+        self.formatters = {
+            "selected": {"type": "tickCross"},
+            "color": {"type": "color"},
+        }
         self.table.set_index(["id"], inplace=True)
         self.data = self.param.table.rx()
         self.sample_select.options = self.sample_set_indices()
@@ -236,6 +239,7 @@ class IndividualsTable(Viewer):
         )
 
     modification_header = pn.pane.Markdown("#### Batch reassign indivuduals:")
+
     def modification_sidebar(self):
         return pn.Card(
             pn.Column(
@@ -427,13 +431,15 @@ class DataStore(Viewer):
             self.sample_sets_table.data.rx.value,
             left_on="sample_set_id",
             right_index=True,  # Use the index from sample_sets_table or individuals? what index is it?
-            suffixes=('_indiv', '_sample')
+            suffixes=("_indiv", "_sample"),
         )
         combined.reset_index(inplace=True)
-        combined['id'] = combined.index
-        combined.rename(columns={'index': 'id'}, inplace=True)  # Rename the 'index' column to 'id'
+        combined["id"] = combined.index
+        combined.rename(
+            columns={"index": "id"}, inplace=True
+        )  # Rename the 'index' column to 'id'
         return combined
-    
+
     def __init__(self, **params):
         super().__init__(**params)
         combined_data = self.combine_tables
@@ -447,12 +453,17 @@ class DataStore(Viewer):
             "longitude",
             "latitude",
         ]
-        self.individuals_table = IndividualsTable(table=combined_data, columns = combined_columns) # combined
-        
+        # rebinding individuals_table so combined table is globally accessable
+        self.individuals_table = IndividualsTable(
+            table=combined_data, columns=combined_columns
+        )
+
     @property
     def color(self):
         """Return colours of selected individuals."""
-        return self.individuals_table.data.rx.value.loc[self.individuals_table.data.rx.value.selected].color # combined
+        return self.individuals_table.data.rx.value.loc[
+            self.individuals_table.data.rx.value.selected
+        ].color
 
     def haplotype_gnn(self, focal_ind, windows=None):
         samples, sample_sets = self.individuals_table.sample_sets()
