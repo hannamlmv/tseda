@@ -14,7 +14,8 @@ from .gnn import windowed_genealogical_nearest_neighbours
 
 logger = daiquiri.getLogger("tseda")
 
-# test comment 
+# test comment
+
 
 def make_individuals_table(tsm):
     result = []
