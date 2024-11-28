@@ -104,7 +104,6 @@ class IndividualsTable(Viewer):
             "latitude",
         ]
         self.columns = self.columns if self.columns else default_columns
-        print(self.columns)
         self.editors = {k: None for k in self.columns}
         self.editors["sample_set_id"] = {
             "type": "number",
@@ -453,7 +452,6 @@ class DataStore(Viewer):
     @property
     def color(self):
         """Return colours of selected individuals."""
-        print()
         return self.individuals_table.data.rx.value.loc[self.individuals_table.data.rx.value.selected].color # combined
 
     def haplotype_gnn(self, focal_ind, windows=None):
