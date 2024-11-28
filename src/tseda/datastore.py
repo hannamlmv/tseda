@@ -238,7 +238,9 @@ class IndividualsTable(Viewer):
             styles=config.VCARD_STYLE,
         )
 
-    modification_header = pn.pane.Markdown("#### Batch reassign indivuduals:")
+    modification_header = pn.pane.HTML(
+        "<h4 style='margin: 0;'>Batch reassign individuals</h4>"
+    )
 
     def modification_sidebar(self):
         return pn.Card(
@@ -270,9 +272,9 @@ class SampleSetsTable(Viewer):
     }
 
     create_sample_set_textinput = param.String(
-        doc="New sample set name. Press Enter (⏎) to create.",
+        doc="Enter name of new sample set. Press Enter (⏎) to create.",
         default=None,
-        label="New sample set name",
+        label="Create new sample set",
     )
 
     warning_pane = pn.pane.Alert(

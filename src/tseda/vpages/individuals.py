@@ -30,10 +30,32 @@ class IndividualsPage(View):
         self.geomap = GeoMap(datastore=self.datastore)
 
     def __panel__(self):
-        return pn.Column(self.geomap, self.data)
+        return pn.Column(
+            self.geomap,
+            pn.pane.Markdown(
+                "**Map** - Displays the geographical locations where samples "
+                "were collected and visually represents their group sample "
+                "affiliations through colors.",
+                sizing_mode="stretch_width",
+            ),
+            self.data,
+        )
 
     def sidebar(self):
         return pn.Column(
+            pn.pane.HTML(
+                "<h2 style='margin: 0;'>Individuals</h2>",
+                sizing_mode="stretch_width",
+            ),
+            pn.pane.Markdown(
+                (
+                    "This section allows you to manage and explore "
+                    "individual samples in your dataset.<br><br>"
+                    "Use the controls below to customize the "
+                    "plots and adjust parameters."
+                ),
+                sizing_mode="stretch_width",
+            ),
             self.geomap.sidebar,
             self.data.options_sidebar,
             self.data.modification_sidebar,

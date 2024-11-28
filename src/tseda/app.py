@@ -20,7 +20,7 @@ logger = daiquiri.getLogger("tseda")
 
 RAW_CSS = """
         .sidenav#sidebar {
-            background-color: #15E3AC;
+            background-color: WhiteSmoke;
         }
         .title {
             font-size: var(--type-ramp-plus-2-font-size);

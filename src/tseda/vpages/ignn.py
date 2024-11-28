@@ -322,12 +322,31 @@ class IGNNPage(View):
             pn.Row(
                 self.geomap,
             ),
+            pn.pane.Markdown(
+                "**Map** - Displays the geographical locations where samples "
+                "were collected and visually represents their group sample "
+                "affiliations through colors.",
+                sizing_mode="stretch_width",
+            ),
             self.vbar,
             self.gnnhaplotype,
         )
 
     def sidebar(self):
         return pn.Column(
+            pn.pane.HTML(
+                "<h2 style='margin: 0;'>iGNN</h2>", sizing_mode="stretch_width"
+            ),
+            pn.pane.Markdown(
+                (
+                    "This section provides interactive visualizations for "
+                    "**Genealogical Nearest Neighbors "
+                    "(GNN)** analysis.<br><br>"
+                    "Use the controls below to customize the plots and "
+                    "adjust parameters."
+                ),
+                sizing_mode="stretch_width",
+            ),
             self.geomap.sidebar,
             self.vbar.sidebar,
             self.gnnhaplotype.sidebar,

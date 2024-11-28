@@ -36,7 +36,7 @@ class Tree(View):
         default=None, doc="Get tree at genome position (bp)"
     )
 
-    warning_pane = pn.pane.Alert(
+    position_index_warning = pn.pane.Alert(
         "The input for position or tree index is out of bounds.",
         alert_type="warning",
         visible=False,
@@ -44,13 +44,6 @@ class Tree(View):
 
     width = param.Integer(default=750, doc="Width of the tree plot")
     height = param.Integer(default=520, doc="Height of the tree plot")
-    options = param.String(
-        default="{'y_axis': 'time', 'node_labels': {}}",
-        doc=(
-            "Additional options for configuring tree plot. "
-            "Must be a valid dictionary string."
-        ),
-    )
     next = param.Action(
         lambda x: x.next_tree(), doc="Next tree", label="Next tree"
     )
@@ -58,7 +51,36 @@ class Tree(View):
         lambda x: x.prev_tree(), doc="Previous tree", label="Previous tree"
     )
 
+    y_axis = pn.widgets.Checkbox(name="Y-axis", value=True)
+    y_ticks = pn.widgets.Checkbox(name="Y-ticks", value=True)
+    x_axis = pn.widgets.Checkbox(name="X-axis", value=False)
+    sites_mutations = pn.widgets.Checkbox(
+        name="Sites and mutations", value=True
+    )
+    node_labels = param.String(
+        default="{}",
+        doc=(
+            """Show custom labels for the nodes (specified by ID).
+            Any nodes not present will not have a label.
+            Examle: {1: 'label1', 2: 'label2',...}"""
+        ),
+    )
+    additional_options = param.String(
+        default="{}",
+        doc=(
+            """Add more options as specified by the documentation.
+            Must be a valid dictionary.
+            Examle: {'title': 'My Tree',...}"""
+        ),
+    )
+
     symbol_size = param.Number(default=8, bounds=(0, None), doc="Symbol size")
+
+    advanced_warning = pn.pane.Alert(
+        "The inputs for the advanced options are not valid.",
+        alert_type="warning",
+        visible=False,
+    )
 
     def next_tree(self):
         self.position = None
@@ -93,23 +115,47 @@ class Tree(View):
             int(self.position) < 0
             or int(self.position) > self.datastore.tsm.ts.sequence_length
         ):
-            self.warning_pane.visible = True
+            self.position_index_warning.visible = True
             raise ValueError
         if (
             self.tree_index is not None
             and int(self.tree_index) < 0
             or int(self.tree_index) > self.datastore.tsm.ts.num_trees
         ):
-            self.warning_pane.visible = True
+            self.position_index_warning.visible = True
             raise ValueError
         else:
-            self.warning_pane.visible = False
+            self.position_index_warning.visible = False
+
+    def handle_advanced(self):
+        if self.sites_mutations.value is True:
+            omit_sites = not self.sites_mutations.value
+        else:
+            omit_sites = True
+        if self.y_ticks.value is True:
+            y_ticks = None
+        else:
+            y_ticks = {}
+        if self.node_labels == "":
+            self.node_labels = "{}"
+        if self.additional_options == "":
+            self.node_options = "{}"
+        return omit_sites, y_ticks
 
     @param.depends(
-        "width", "height", "position", "options", "symbol_size", "tree_index"
+        "width",
+        "height",
+        "position",
+        "symbol_size",
+        "tree_index",
+        "y_axis.value",
+        "y_ticks.value",
+        "x_axis.value",
+        "sites_mutations.value",
+        "node_labels",
+        "additional_options",
     )
     def __panel__(self):
-        options = eval_options(self.options)
         if self.position is not None:
             tree = self.datastore.tsm.ts.at(self.position)
             self.tree_index = tree.index
@@ -117,18 +163,37 @@ class Tree(View):
             tree = self.datastore.tsm.ts.at_index(self.tree_index)
         pos1 = int(tree.get_interval()[0])
         pos2 = int(tree.get_interval()[1]) - 1
+        try:
+            omit_sites, y_ticks = self.handle_advanced()
+            node_labels = eval_options(self.node_labels)
+            additional_options = eval_options(self.additional_options)
+            plot = tree.draw_svg(
+                size=(self.width, self.height),
+                symbol_size=self.symbol_size,
+                y_axis=self.y_axis.value,
+                x_axis=self.x_axis.value,
+                omit_sites=omit_sites,
+                node_labels=node_labels,
+                y_ticks=y_ticks,
+                style=self.default_css,
+                **additional_options,
+            )
+            self.advanced_warning.visible = False
+        except (ValueError, SyntaxError, TypeError):
+            plot = tree.draw_svg(
+                size=(self.width, self.height),
+                y_axis=True,
+                node_labels={},
+                style=self.default_css,
+            )
+            self.advanced_warning.visible = True
         return pn.Column(
-            pn.pane.Markdown(
-                f"## Tree index {self.tree_index} (position {pos1} - {pos2})"
-            ),
             pn.pane.HTML(
-                tree.draw_svg(
-                    size=(self.width, self.height),
-                    symbol_size=self.symbol_size,
-                    style=self.default_css,
-                    **options,
-                ),
+                f"<h2>Tree index {self.tree_index}"
+                f" (position {pos1} - {pos2})</h2>",
+                sizing_mode="stretch_width",
             ),
+            pn.pane.HTML(plot),
             pn.Row(
                 self.param.prev,
                 self.param.next,
@@ -149,21 +214,47 @@ class Tree(View):
                 *fields,
                 self.param.width,
                 self.param.height,
-                self.param.options,
-                self.param.symbol_size,
                 collapsed=False,
                 title="Tree plotting options",
                 header_background=config.SIDEBAR_BACKGROUND,
                 active_header_background=config.SIDEBAR_BACKGROUND,
                 styles=config.VCARD_STYLE,
             ),
-            self.warning_pane,
+            self.position_index_warning,
         )
         return sidebar_content
 
     @param.depends("search_by.value", watch=True)
     def sidebar(self):
         return self.update_sidebar()
+
+    def advanced_options(self):
+        sidebar_content = pn.Column(
+            pn.Card(
+                pn.pane.HTML(
+                    """<b>See the <a 
+                    href='https://tskit.dev/tskit/docs/stable/
+                    python-api.html#tskit.TreeSequence.draw_svg'>
+                    tskit documentation</a> for more information
+                    about these plotting options.<b>"""
+                ),
+                pn.pane.HTML("Include"),
+                self.x_axis,
+                self.y_axis,
+                self.y_ticks,
+                self.sites_mutations,
+                self.param.symbol_size,
+                self.param.node_labels,
+                self.param.additional_options,
+                collapsed=True,
+                title="Advanced plotting options",
+                header_background=config.SIDEBAR_BACKGROUND,
+                active_header_background=config.SIDEBAR_BACKGROUND,
+                styles=config.VCARD_STYLE,
+            ),
+            self.advanced_warning,
+        )
+        return sidebar_content
 
 
 class TreesPage(View):
@@ -183,6 +274,20 @@ class TreesPage(View):
 
     def sidebar(self):
         return pn.Column(
+            pn.pane.HTML(
+                "<h2 style='margin: 0;'>Trees</h2>",
+                sizing_mode="stretch_width",
+            ),
+            pn.pane.Markdown(
+                (
+                    "This section allows you to explore local genealogical "
+                    "trees.<br><br>"
+                    "Use the controls below to customize the plots and adjust"
+                    "parameters."
+                ),
+                sizing_mode="stretch_width",
+            ),
             self.data.sidebar,
+            self.data.advanced_options,
             self.sample_sets.sidebar_table,
         )

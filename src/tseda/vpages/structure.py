@@ -62,9 +62,19 @@ class GNN(View):
             mean_gnn = df.groupby("focal_population").mean()
             # Z-score normalization here!
             return pn.Column(
-                pn.pane.Markdown("## GNN cluster plot\n"),
+                pn.pane.HTML(
+                    "<h2 style='margin: 0;'> GNN cluster plot </h2>",
+                    sizing_mode="stretch_width",
+                ),
                 mean_gnn.hvplot.heatmap(
                     cmap=cc.bgy, height=300, responsive=True
+                ),
+                pn.pane.Markdown(
+                    "**GNN cluster plot** - This heatmap visualizes the "
+                    "genealogical relationships between individuals based on "
+                    "the proportions of their genealogical nearest neighbors "
+                    "(GNN).",
+                    sizing_mode="stretch_width",
                 ),
                 pn.pane.Markdown("FIXME: dendrogram and Z-score\n"),
             )
@@ -94,8 +104,17 @@ class Fst(View):
                 np.reshape(fst, newshape=(k, k)), columns=groups, index=groups
             )
             return pn.Column(
-                pn.pane.Markdown("## Fst\n"),
+                pn.pane.HTML(
+                    "<h2 style='margin: 0;'>Fst</h2>",
+                    sizing_mode="stretch_width",
+                ),
                 df.hvplot.heatmap(cmap=cc.bgy, height=300, responsive=True),
+                pn.pane.Markdown(
+                    "**Fst Plot** - Shows the fixation index (Fst) between "
+                    "different sample sets, allowing comparison of genetic "
+                    "diversity across populations.",
+                    sizing_mode="stretch_width",
+                ),
             )
 
 
@@ -116,4 +135,20 @@ class StructurePage(View):
         return pn.Column(
             self.gnn,
             self.fst,
+        )
+
+    def sidebar(self):
+        return pn.Column(
+            pn.pane.HTML(
+                "<h2 style='margin: 0;'>Structure</h2>",
+                sizing_mode="stretch_width",
+            ),
+            pn.pane.Markdown(
+                (
+                    "This section provides an analysis of the **population "
+                    "structure** based on genomic data. "
+                    "You can explore two types of plots."
+                ),
+                sizing_mode="stretch_width",
+            ),
         )
