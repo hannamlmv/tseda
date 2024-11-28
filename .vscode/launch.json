@@ -1,0 +1,21 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "name": "Python: tseda serve",
+        "type": "debugpy",
+        "request": "launch",
+        "module": "tseda",  // Use the module 'tseda' directly
+        "args": [
+          "serve", "tests/data/test.trees.tseda"  // Arguments to the module
+        ],
+        "console": "integratedTerminal",
+        "env": {
+          "PYTHONPATH": "${workspaceFolder}"
+        },
+        "justMyCode": true,
+        "python": "${workspaceFolder}/.venv/bin/python"
+      }
+    ]
+  }
+  
