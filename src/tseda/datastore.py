@@ -323,7 +323,6 @@ class SampleSetsTable(Viewer):
         ]
         self.param.remove_sample_set.objects = non_predefined
 
-    @pn.depends("create_button.value")
     def handle_create(self):
         previous_names = [self.table.name[i] for i in range(len(self.table))]
         if self.create_sample_set_textinput in previous_names:
@@ -351,7 +350,13 @@ class SampleSetsTable(Viewer):
             self.create_sample_set_textinput = None
 
     def handle_remove(self):
-        print("handlinhg remove")
+        self.param.table.rx.value.drop(
+            self.param.table.rx.value.loc[
+                self.param.table.rx.value["name"] == self.remove_sample_set
+            ].index[0],
+            inplace=True,
+        )
+        self.remove_sample_set = " "
 
     @property
     def tooltip(self):
