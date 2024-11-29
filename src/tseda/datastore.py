@@ -278,7 +278,12 @@ class SampleSetsTable(Viewer):
         label="Remove sample set",
     )
 
-    remove_button = pn.widgets.Button(name="Remove", align=("center", "end"))
+    create_button = pn.widgets.Button(
+        name="Create", align=("center", "end"), height=40, width=80
+    )
+    remove_button = pn.widgets.Button(
+        name="Remove", align=("center", "end"), width=80
+    )
 
     warning_pane = pn.pane.Alert(
         "This sample set name already exists, pick a unique name.",
@@ -314,10 +319,9 @@ class SampleSetsTable(Viewer):
         )
 
     @pn.depends(
-        "page_size", "create_sample_set_textinput", "remove_button.value"
+        "page_size", "create_button.value", "remove_button.value"
     )  # , "columns")
     def __panel__(self):
-        self.set_remove_options()
         if self.create_sample_set_textinput is not None:
             previous_names = [
                 self.table.name[i] for i in range(len(self.table))
@@ -355,6 +359,7 @@ class SampleSetsTable(Viewer):
             formatters=self.formatters,
             editors=self.editors,
         )
+        self.set_remove_options()
         return pn.Column(self.tooltip, table)
 
     def sidebar_table(self):
@@ -382,7 +387,9 @@ class SampleSetsTable(Viewer):
         return pn.Column(
             pn.Card(
                 self.param.page_size,
-                self.param.create_sample_set_textinput,
+                pn.Row(
+                    self.param.create_sample_set_textinput, self.create_button
+                ),
                 pn.Row(self.param.remove_sample_set, self.remove_button),
                 title="Sample sets table options",
                 collapsed=False,
