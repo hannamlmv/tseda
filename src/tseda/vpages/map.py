@@ -41,9 +41,7 @@ class GeoMap(View):
         doc="Select XYZ tiles for map",
     )
     tiles = tiles_options[tiles_selector.default]
-    refresh_button = pn.widgets.Button(name="Refresh map")
 
-    @pn.depends("refresh_button.value")
     def __panel__(self):
         self.tiles = tiles_options[self.tiles_selector]
         df = self.datastore.individuals_table.data.rx.value
@@ -93,7 +91,6 @@ class GeoMap(View):
     def sidebar(self):
         return pn.Card(
             self.param.tiles_selector,
-            self.refresh_button,
             collapsed=False,
             title="Map options",
             header_background=config.SIDEBAR_BACKGROUND,
