@@ -189,9 +189,8 @@ class IndividualsTable(Viewer):
     def loc(self, i):
         """Return individual by index"""
         return self.data.rx.value.loc[i]
-
-    @pn.depends("page_size", "sample_select.value", "mod_update_button.value")
-    def __panel__(self):
+    
+    def select_sample_sets(self):
         if isinstance(self.sample_select.value, list):
             self.data.rx.value["selected"] = False
             for sample_set_id in self.sample_select.value:
@@ -200,6 +199,11 @@ class IndividualsTable(Viewer):
                     "selected",
                 ] = True
 
+
+    @pn.depends("page_size", "sample_select.value", "mod_update_button.value")
+    def __panel__(self):
+
+        self.select_sample_sets()
         if self.sample_set_to is not None:
             if self.population_from is not None:
                 try:
@@ -421,8 +425,6 @@ class DataStore(Viewer):
     tsm = param.ClassSelector(class_=model.TSModel)
     individuals_table = param.ClassSelector(class_=IndividualsTable)
     sample_sets_table = param.ClassSelector(class_=SampleSetsTable)
-    combined_table = param.ClassSelector(class_=IndividualsTable)
-
     views = param.List(constant=True)
 
     @property
@@ -432,40 +434,44 @@ class DataStore(Viewer):
             self.individuals_table.data.rx.value,
             self.sample_sets_table.data.rx.value,
             left_on="sample_set_id",
-            right_index=True,  # Use the index from sample_sets_table or individuals? what index is it?
+            right_index=True, 
             suffixes=("_indiv", "_sample"),
         )
         combined.reset_index(inplace=True)
         combined["id"] = combined.index
         combined.rename(
             columns={"index": "id"}, inplace=True
-        )  # Rename the 'index' column to 'id'
+        )
+        combined = combined[
+            [
+                "color",
+                "sample_set_id",
+                "name_sample",
+                "population",
+                "name_indiv",
+                "selected",
+                "longitude",
+                "latitude",
+            ]
+        ]
         return combined
 
     def __init__(self, **params):
         super().__init__(**params)
-        combined_data = self.combine_tables
-        combined_columns = [
-            "color",
-            "sample_set_id",
-            "name_sample",
-            "population",
-            "name_indiv",
-            "selected",
-            "longitude",
-            "latitude",
-        ]
-        # rebinding individuals_table so combined table is globally accessable
-        self.individuals_table = IndividualsTable(
-            table=combined_data, columns=combined_columns
-        )
+        pn.bind(self.combine_tables,
+                self.individuals_table.data.rx.value.selected,
+                self.sample_sets_table.data.rx.value.color,)
 
     @property
     def color(self):
-        """Return colours of selected individuals."""
-        return self.individuals_table.data.rx.value.loc[
-            self.individuals_table.data.rx.value.selected
-        ].color
+        """Return colors of selected individuals"""
+        color = pd.merge(
+            self.individuals_table.data.rx.value,
+            self.sample_sets_table.data.rx.value,
+            left_on="sample_set_id",
+            right_index=True,
+        )
+        return color.loc[color.selected].color
 
     def haplotype_gnn(self, focal_ind, windows=None):
         samples, sample_sets = self.individuals_table.sample_sets()
