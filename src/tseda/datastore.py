@@ -271,11 +271,11 @@ class SampleSetsTable(Viewer):
         label="Create new sample set",
     )
 
-    remove_sample_set = pn.widgets.Select(
-        name="Remove sample set",
-        description="Remove a non-predefined sample set.",
-        value=None,
-        sizing_mode="stretch_width",
+    remove_sample_set = param.Selector(
+        doc="Remove a non-predefined sample set.",
+        allow_None=True,
+        default=None,
+        label="Remove sample set",
     )
 
     remove_button = pn.widgets.Button(name="Remove", align=("center", "end"))
@@ -295,6 +295,14 @@ class SampleSetsTable(Viewer):
         self.table.set_index(["id"], inplace=True)
         self.data = self.param.table.rx()
 
+    def set_remove_options(self):
+        non_predefined = [" "] + [
+            name
+            for i, name in enumerate(self.param.table.rx.value.name)
+            if not self.param.table.rx.value.predefined[i]
+        ]
+        self.param.remove_sample_set.objects = non_predefined
+
     @property
     def tooltip(self):
         return pn.widgets.TooltipIcon(
@@ -305,8 +313,11 @@ class SampleSetsTable(Viewer):
             ),
         )
 
-    @pn.depends("page_size", "create_sample_set_textinput")  # , "columns")
+    @pn.depends(
+        "page_size", "create_sample_set_textinput", "remove_button.value"
+    )  # , "columns")
     def __panel__(self):
+        self.set_remove_options()
         if self.create_sample_set_textinput is not None:
             previous_names = [
                 self.table.name[i] for i in range(len(self.table))
@@ -372,7 +383,7 @@ class SampleSetsTable(Viewer):
             pn.Card(
                 self.param.page_size,
                 self.param.create_sample_set_textinput,
-                pn.Row(self.remove_sample_set, self.remove_button),
+                pn.Row(self.param.remove_sample_set, self.remove_button),
                 title="Sample sets table options",
                 collapsed=False,
                 header_background=config.SIDEBAR_BACKGROUND,
