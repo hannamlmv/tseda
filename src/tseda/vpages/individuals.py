@@ -112,7 +112,8 @@ class IndividualsPage(View):
                 "affiliations through colors.",
                 sizing_mode="stretch_width",
             ),
-            table,
+            table
+
         )
 
     def sidebar(self):

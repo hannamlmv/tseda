@@ -41,7 +41,10 @@ class GeoMap(View):
         doc="Select XYZ tiles for map",
     )
     tiles = tiles_options[tiles_selector.default]
+    # cant remove button witout page breaking
+    refresh_button = pn.widgets.Button(name="Refresh map", visible=False)
 
+    @pn.depends("refresh_button.value")
     def __panel__(self):
         self.tiles = tiles_options[self.tiles_selector]
         df = self.datastore.individuals_table.data.rx.value
@@ -91,6 +94,7 @@ class GeoMap(View):
     def sidebar(self):
         return pn.Card(
             self.param.tiles_selector,
+            self.refresh_button,
             collapsed=False,
             title="Map options",
             header_background=config.SIDEBAR_BACKGROUND,
