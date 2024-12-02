@@ -216,16 +216,19 @@ class IndividualsTable(Viewer):
         else:
             self.data_mod_warning.visible = False
             return False
+        
+    def select_sample_sets(self):
+            if isinstance(self.sample_select.value, list):
+                self.data.rx.value["selected"] = False
+                for sample_set_id in self.sample_select.value:
+                    self.data.rx.value.loc[
+                        self.data.rx.value.sample_set_id == sample_set_id,
+                        "selected",
+                    ] = True
 
     @pn.depends("page_size", "sample_select.value", "mod_update_button.value")
     def __panel__(self):
-        if isinstance(self.sample_select.value, list):
-            self.data.rx.value["selected"] = False
-            for sample_set_id in self.sample_select.value:
-                self.data.rx.value.loc[
-                    self.data.rx.value.sample_set_id == sample_set_id,
-                    "selected",
-                ] = True
+        self.select_sample_sets()
         if self.check_data_modification():
             self.table.loc[
                 self.table["population"] == self.population_from,  # pyright: ignore[reportIndexIssue]
