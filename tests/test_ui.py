@@ -24,23 +24,26 @@ def test_component(page, port, ds):
     page.set_viewport_size({"width": 1920, "height": 1080})
 
     page.get_by_role("button", name="Sample Sets").click()
-    expect(page.get_by_text("Create new sample set")).to_be_visible()
-    expect(page.get_by_text("predefined")).to_be_visible()
+    expect(page.get_by_text("Create new sample set").nth(0)).to_be_visible()
+    expect(page.get_by_text("predefined").nth(0)).to_be_visible()
 
     page.get_by_role("button", name="Individuals").click()
-    expect(page.get_by_text("Data modification")).to_be_visible()
-    expect(page.get_by_text("Population ID")).to_be_visible()
+    expect(page.get_by_text("Data modification").nth(0)).to_be_visible()
+    expect(page.get_by_text("Population ID").nth(0)).to_be_visible()
 
     page.get_by_role("button", name="Structure").click()
-    expect(page.get_by_text("Structure")).to_be_visible()
+    expect(page.get_by_text("GNN cluster plot").nth(0)).to_be_visible()
+    expect(page.get_by_text("Structure").nth(0)).to_be_visible()
 
     page.get_by_role("button", name="iGNN").click()
-    expect(page.get_by_text("Sample sets table quick view")).to_be_visible()
+    expect(
+        page.get_by_text("Sample sets table quick view").nth(0)
+    ).to_be_visible()
 
     page.get_by_role("button", name="Statistics").click()
     expect(
-        page.get_by_text("Oneway statistics plotting options")
+        page.get_by_text("Oneway statistics plotting options").nth(0)
     ).to_be_visible()
 
     page.get_by_role("button", name="Trees").click()
-    expect(page.get_by_text("Tree plotting options")).to_be_visible()
+    expect(page.get_by_text("Tree plotting options").nth(0)).to_be_visible()

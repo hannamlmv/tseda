@@ -74,6 +74,13 @@ class IndividualsTable(Viewer):
     )
     mod_update_button = pn.widgets.Button(name="Update")
 
+    data_mod_warning = pn.pane.Alert(
+        """Please enter a valid population ID and
+        a non-negative new sample set ID""",
+        alert_type="warning",
+        visible=False,
+    )
+
     filters = {
         "name": {"type": "input", "func": "like", "placeholder": "Enter name"},
         "population": {
@@ -170,6 +177,10 @@ class IndividualsTable(Viewer):
         samples, sample_sets = self.sample_sets()
         return list(sample_sets.keys())
 
+    def get_population_ids(self):
+        """Return indices of sample groups."""
+        return sorted(self.data.rx.value["population"].unique().tolist())
+
     @property
     def sample2ind(self):
         """Map sample (tskit node) ids to individual ids"""
@@ -189,8 +200,25 @@ class IndividualsTable(Viewer):
     def loc(self, i):
         """Return individual by index"""
         return self.data.rx.value.loc[i]
-    
-    def select_sample_sets(self):
+
+    def check_data_modification(self):
+        if self.sample_set_to is not None and self.population_from is not None:
+            population_ids = self.get_population_ids()
+            if self.population_from not in population_ids:
+                self.data_mod_warning.visible = True
+                return False
+            elif int(self.sample_set_to) < 0:
+                self.data_mod_warning.visible = True
+                return False
+            else:
+                self.data_mod_warning.visible = False
+                return True
+        else:
+            self.data_mod_warning.visible = False
+            return False
+
+    @pn.depends("page_size", "sample_select.value", "mod_update_button.value")
+    def __panel__(self):
         if isinstance(self.sample_select.value, list):
             self.data.rx.value["selected"] = False
             for sample_set_id in self.sample_select.value:
@@ -198,23 +226,11 @@ class IndividualsTable(Viewer):
                     self.data.rx.value.sample_set_id == sample_set_id,
                     "selected",
                 ] = True
-
-
-    @pn.depends("page_size", "sample_select.value", "mod_update_button.value")
-    def __panel__(self):
-
-        self.select_sample_sets()
-        if self.sample_set_to is not None:
-            if self.population_from is not None:
-                try:
-                    self.table.loc[
-                        self.table["population"] == self.population_from,  # pyright: ignore[reportIndexIssue]
-                        "sample_set_id",
-                    ] = self.sample_set_to
-                except IndexError:
-                    logger.error("No such population %i", self.population_from)
-            else:
-                logger.info("No population defined")
+        if self.check_data_modification():
+            self.table.loc[
+                self.table["population"] == self.population_from,  # pyright: ignore[reportIndexIssue]
+                "sample_set_id",
+            ] = self.sample_set_to
         data = self.data[self.columns]
 
         table = pn.widgets.Tabulator(
@@ -247,17 +263,18 @@ class IndividualsTable(Viewer):
     )
 
     def modification_sidebar(self):
-        return pn.Card(
-            pn.Column(
+        return pn.Column(
+            pn.Card(
                 self.modification_header,
                 pn.Row(self.param.population_from, self.param.sample_set_to),
                 self.mod_update_button,
+                collapsed=False,
+                title="Data modification",
+                header_background=config.SIDEBAR_BACKGROUND,
+                active_header_background=config.SIDEBAR_BACKGROUND,
+                styles=config.VCARD_STYLE,
             ),
-            collapsed=False,
-            title="Data modification",
-            header_background=config.SIDEBAR_BACKGROUND,
-            active_header_background=config.SIDEBAR_BACKGROUND,
-            styles=config.VCARD_STYLE,
+            self.data_mod_warning,
         )
 
 
@@ -281,7 +298,7 @@ class SampleSetsTable(Viewer):
         label="Create new sample set",
     )
 
-    warning_pane = pn.pane.Alert(
+    sample_set_warning = pn.pane.Alert(
         "This sample set name already exists, pick a unique name.",
         alert_type="warning",
         visible=False,
@@ -313,7 +330,7 @@ class SampleSetsTable(Viewer):
                 self.table.name[i] for i in range(len(self.table))
             ]
             if self.create_sample_set_textinput in previous_names:
-                self.warning_pane.visible = True
+                self.sample_set_warning.visible = True
             else:
                 previous_colors = [
                     self.table.color[i] for i in range(len(self.table))
@@ -327,7 +344,7 @@ class SampleSetsTable(Viewer):
                     colors = unused_colors
                 else:
                     colors = config.COLORS
-                self.warning_pane.visible = False
+                self.sample_set_warning.visible = False
                 i = max(self.param.table.rx.value.index) + 1
                 self.param.table.rx.value.loc[i] = [
                     self.create_sample_set_textinput,
@@ -379,7 +396,7 @@ class SampleSetsTable(Viewer):
                 active_header_background=config.SIDEBAR_BACKGROUND,
                 styles=config.VCARD_STYLE,
             ),
-            self.warning_pane,
+            self.sample_set_warning,
         )
 
     @property
