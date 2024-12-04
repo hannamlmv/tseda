@@ -100,10 +100,14 @@ class SampleSet:
             self.color = self.colormap[self.id % len(self.colormap)]
         if population is not None:
             self.name = parse_metadata(population, self.name_re)
-            self.og_name = self.name # need to copy? will be made into table later anyways 
+            self.og_name = (
+                self.name
+            )  # need to copy? will be made into table later anyways
         if self.name is None:
             self.name = f"SampleSet-{self.id}"
-            self.og_name = self.name # need to copy? will be made into table later anyways 
+            self.og_name = (
+                self.name
+            )  # need to copy? will be made into table later anyways
 
 
 @dataclasses.dataclass
@@ -120,6 +124,7 @@ class Individual(tskit.Individual):
     longitude: np.float64 = None
     latitude: np.float64 = None
     name: str = None
+    og_name: str = None
     sample_set_id: np.int32 = None
     selected: bool = True
 
@@ -140,6 +145,7 @@ class Individual(tskit.Individual):
         self.longitude = parse_metadata(self, self.longitude_re)
         self.latitude = parse_metadata(self, self.latitude_re)
         self.name = parse_metadata(self, self.name_re)
+        self.og_name = self.name
 
     @property
     def samples(self):
