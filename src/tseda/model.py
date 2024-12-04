@@ -88,6 +88,7 @@ class SampleSet:
 
     id: np.int32
     name: str = None
+    og_name: str = None
     color: str = None
     population: dataclasses.InitVar[tskit.Population | None] = None
     predefined: bool = False
@@ -99,8 +100,10 @@ class SampleSet:
             self.color = self.colormap[self.id % len(self.colormap)]
         if population is not None:
             self.name = parse_metadata(population, self.name_re)
+            self.og_name = self.name # need to copy? will be made into table later anyways 
         if self.name is None:
             self.name = f"SampleSet-{self.id}"
+            self.og_name = self.name # need to copy? will be made into table later anyways 
 
 
 @dataclasses.dataclass

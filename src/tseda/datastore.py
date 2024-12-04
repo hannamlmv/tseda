@@ -317,7 +317,7 @@ class SampleSetsTable(Viewer):
             ),
         )
 
-    @pn.depends("page_size", "create_sample_set_textinput")  # , "columns")
+    @pn.depends("page_size", "create_sample_set_textinput")
     def __panel__(self):
         if self.create_sample_set_textinput is not None:
             previous_names = [
@@ -346,6 +346,8 @@ class SampleSetsTable(Viewer):
                     False,
                 ]
                 self.create_sample_set_textinput = None
+
+        # print(self.data.rx.value )
         table = pn.widgets.Tabulator(
             self.data,
             layout="fit_data_table",
