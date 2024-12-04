@@ -82,6 +82,12 @@ class Tree(View):
         visible=False,
     )
 
+    slider = pn.widgets.IntSlider(name="Chromosome Position")
+
+    def __init__(self, **params):
+        super().__init__(**params)
+        self.slider.end = int(self.datastore.tsm.ts.sequence_length - 1)
+
     def next_tree(self):
         self.position = None
         self.tree_index = min(
@@ -113,14 +119,14 @@ class Tree(View):
     def check_inputs(self):
         if self.position is not None and (
             int(self.position) < 0
-            or int(self.position) > self.datastore.tsm.ts.sequence_length
+            or int(self.position) >= self.datastore.tsm.ts.sequence_length
         ):
             self.position_index_warning.visible = True
             raise ValueError
         if (
             self.tree_index is not None
             and int(self.tree_index) < 0
-            or int(self.tree_index) > self.datastore.tsm.ts.num_trees
+            or int(self.tree_index) >= self.datastore.tsm.ts.num_trees
         ):
             self.position_index_warning.visible = True
             raise ValueError
@@ -142,6 +148,15 @@ class Tree(View):
             self.node_options = "{}"
         return omit_sites, y_ticks
 
+    @param.depends("position", watch=True)
+    def update_slider(self):
+        if self.position is not None:
+            self.slider.value = self.position
+
+    @param.depends("slider.value_throttled", watch=True)
+    def update_position(self):
+        self.position = self.slider.value
+
     @param.depends(
         "width",
         "height",
@@ -154,6 +169,7 @@ class Tree(View):
         "sites_mutations.value",
         "node_labels",
         "additional_options",
+        "slider.value_throttled",
     )
     def __panel__(self):
         if self.position is not None:
@@ -161,8 +177,7 @@ class Tree(View):
             self.tree_index = tree.index
         else:
             tree = self.datastore.tsm.ts.at_index(self.tree_index)
-        pos1 = int(tree.get_interval()[0])
-        pos2 = int(tree.get_interval()[1]) - 1
+            self.slider.value = int(tree.get_interval()[0])
         try:
             omit_sites, y_ticks = self.handle_advanced()
             node_labels = eval_options(self.node_labels)
@@ -187,6 +202,8 @@ class Tree(View):
                 style=self.default_css,
             )
             self.advanced_warning.visible = True
+        pos1 = int(tree.get_interval()[0])
+        pos2 = int(tree.get_interval()[1]) - 1
         return pn.Column(
             pn.pane.HTML(
                 f"<h2>Tree index {self.tree_index}"
@@ -194,6 +211,7 @@ class Tree(View):
                 sizing_mode="stretch_width",
             ),
             pn.pane.HTML(plot),
+            self.slider,
             pn.Row(
                 self.param.prev,
                 self.param.next,

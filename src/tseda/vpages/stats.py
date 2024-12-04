@@ -294,6 +294,7 @@ class StatsPage(View):
         super().__init__(**kwargs)
         self.oneway = OnewayStats(datastore=self.datastore)
         self.multiway = MultiwayStats(datastore=self.datastore)
+        self.sample_sets = self.datastore.sample_sets_table
 
     def __panel__(self):
         return pn.Column(
@@ -325,4 +326,5 @@ class StatsPage(View):
             ),
             self.oneway.sidebar,
             self.multiway.sidebar,
+            self.sample_sets.sidebar_table,
         )

@@ -130,6 +130,7 @@ class StructurePage(View):
         super().__init__(**params)
         self.gnn = GNN(datastore=self.datastore)
         self.fst = Fst(datastore=self.datastore)
+        self.sample_sets = self.datastore.sample_sets_table
 
     def __panel__(self):
         return pn.Column(
@@ -151,4 +152,5 @@ class StructurePage(View):
                 ),
                 sizing_mode="stretch_width",
             ),
+            self.sample_sets.sidebar_table,
         )
