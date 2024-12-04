@@ -51,7 +51,6 @@ class IndividualsPage(View):
         self.individuals_table = self.datastore.individuals_table
         self.sample_sets_table = self.datastore.sample_sets_table
         self.geomap = GeoMap(datastore=self.datastore)
-        self.sample_sets = self.datastore.sample_sets_table
         self.sample_select = self.individuals_table.sample_select
         self.selected = list(self.individuals_table.data.rx.value.selected)
 
@@ -135,5 +134,5 @@ class IndividualsPage(View):
             self.geomap.sidebar,
             self.individuals_table.options_sidebar,
             self.individuals_table.modification_sidebar,
-            self.sample_sets.sidebar_table,
+            self.sample_sets_table.sidebar_table,
         )
