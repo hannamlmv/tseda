@@ -45,26 +45,9 @@ class IndividualsTable(Viewer):
     """Class to hold and view individuals and perform calculations to
     change filters."""
 
-    columns = [
-        "name",
-        "population",
-        "sample_set_id",
-        "selected",
-        "longitude",
-        "latitude",
-    ]
-    editors = {k: None for k in columns}  # noqa
-    editors["sample_set_id"] = {
-        "type": "number",
-        "valueLookup": True,
-    }
-    editors["selected"] = {
-        "type": "list",
-        "values": [False, True],
-        "valuesLookup": True,
-    }
-    formatters = {"selected": {"type": "tickCross"}}
-
+    columns = param.List(default=[], doc="Columns for the table")
+    editors = param.Dict(default={}, doc="Column editors")
+    formatters = param.Dict(default={}, doc="Column formatters")
     table = param.DataFrame()
 
     page_size = param.Selector(
@@ -121,6 +104,29 @@ class IndividualsTable(Viewer):
 
     def __init__(self, **params):
         super().__init__(**params)
+        default_columns = [
+            "name",
+            "population",
+            "sample_set_id",
+            "selected",
+            "longitude",
+            "latitude",
+        ]
+        self.columns = self.columns if self.columns else default_columns
+        self.editors = {k: None for k in self.columns}
+        self.editors["sample_set_id"] = {
+            "type": "number",
+            "valueLookup": True,
+        }
+        self.editors["selected"] = {
+            "type": "list",
+            "values": [False, True],
+            "valuesLookup": True,
+        }
+        self.formatters = {
+            "selected": {"type": "tickCross"},
+            "color": {"type": "color"},
+        }
         self.table.set_index(["id"], inplace=True)
         self.data = self.param.table.rx()
         all_sample_set_ids = sorted(
@@ -203,6 +209,15 @@ class IndividualsTable(Viewer):
         else:
             self.data_mod_warning.visible = False
             return False
+        
+    def select_sample_sets(self):
+            if isinstance(self.sample_select.value, list):
+                self.data.rx.value["selected"] = False
+                for sample_set_id in self.sample_select.value:
+                    self.data.rx.value.loc[
+                        self.data.rx.value.sample_set_id == sample_set_id,
+                        "selected",
+                    ] = True
 
     @pn.depends(
         "page_size",
@@ -211,13 +226,7 @@ class IndividualsTable(Viewer):
         watch=True,
     )
     def __panel__(self):
-        if isinstance(self.sample_select.value, list):
-            self.data.rx.value["selected"] = False
-            for sample_set_id in self.sample_select.value:
-                self.data.rx.value.loc[
-                    self.data.rx.value.sample_set_id == sample_set_id,
-                    "selected",
-                ] = True
+        self.select_sample_sets()
         if self.check_data_modification():
             self.table.loc[
                 self.table["population"] == self.population_from.value,  # pyright: ignore[reportIndexIssue]
@@ -444,8 +453,42 @@ class DataStore(Viewer):
     tsm = param.ClassSelector(class_=model.TSModel)
     individuals_table = param.ClassSelector(class_=IndividualsTable)
     sample_sets_table = param.ClassSelector(class_=SampleSetsTable)
-
     views = param.List(constant=True)
+
+    @property
+    def combine_tables(self):
+        """Combine individuals and sample sets table."""
+        combined = pd.merge(
+            self.individuals_table.data.rx.value,
+            self.sample_sets_table.data.rx.value,
+            left_on="sample_set_id",
+            right_index=True, 
+            suffixes=("_indiv", "_sample"),
+        )
+        combined.reset_index(inplace=True)
+        combined["id"] = combined.index
+        combined.rename(
+            columns={"index": "id"}, inplace=True
+        )
+        combined = combined[
+            [
+                "color",
+                "sample_set_id",
+                "name_sample",
+                "population",
+                "name_indiv",
+                "selected",
+                "longitude",
+                "latitude",
+            ]
+        ]
+        return combined
+
+    def __init__(self, **params):
+        super().__init__(**params)
+        pn.bind(self.combine_tables,
+                self.individuals_table.data.rx.value.selected,
+                self.sample_sets_table.data.rx.value.color,)
 
     @property
     def color(self):
@@ -488,10 +531,3 @@ class DataStore(Viewer):
         df = pd.concat(dflist)
         df.set_index(["haplotype", "start", "end"], inplace=True)
         return df
-
-    # Not needed? Never used?
-    def __panel__(self):
-        return pn.Row(
-            self.individuals_table,
-            self.sample_sets_table,
-        )

@@ -41,7 +41,8 @@ class GeoMap(View):
         doc="Select XYZ tiles for map",
     )
     tiles = tiles_options[tiles_selector.default]
-    refresh_button = pn.widgets.Button(name="Refresh map")
+    # cant remove button witout page breaking
+    refresh_button = pn.widgets.Button(name="Refresh map", visible=False)
 
     @pn.depends("refresh_button.value")
     def __panel__(self):
