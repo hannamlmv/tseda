@@ -387,6 +387,10 @@ class IGNNPage(View):
 
     def __panel__(self):
         return pn.Column(
+            pn.pane.HTML(
+                "<h2 style='margin: 0;'>Geomap</h2>",
+                sizing_mode="stretch_width",
+            ),
             pn.Row(
                 self.geomap,
             ),

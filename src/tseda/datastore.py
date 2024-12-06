@@ -147,8 +147,13 @@ class SampleSetsTable(Viewer):
             formatters=self.formatters,
             editors=self.editors,
         )
+        title = pn.pane.HTML(
+            "<h2 style='margin: 0;'>Sample set table</h2>",
+            sizing_mode="stretch_width",
+        )
         return pn.Column(
-            pn.pane.Markdown("### Sample Set Table"), self.tooltip, table
+            pn.Row(title, self.tooltip, align=("start", "end")),
+            table,
         )
 
     def get_ids(self):
@@ -270,7 +275,7 @@ class IndividualsTable(Viewer):
         options=[],
     )
     population_from = pn.widgets.Select(
-        name="Population ID",
+        name="Original population ID",
         value=None,
         sizing_mode="stretch_width",
         # description=("Reassign individuals with this population ID."),
@@ -281,8 +286,8 @@ class IndividualsTable(Viewer):
         sizing_mode="stretch_width",
         # description=("Reassign individuals to this sample set ID."),
     )
-    mod_update_button = pn.widgets.Button(name="Update")
-    restore_button = pn.widgets.Button(name="Restore", button_type="danger")
+    mod_update_button = pn.widgets.Button(name="Update", button_type="success", align = "end")
+    restore_button = pn.widgets.Button(name="Restore", button_type="danger", align = "end")
 
     data_mod_warning = pn.pane.Alert(
         """Please enter a valid population ID and
@@ -455,10 +460,12 @@ class IndividualsTable(Viewer):
             header_filters=self.filters,
         )
         title = pn.pane.HTML(
-            "<h2 style='margin: 0;'>Individuals Table</h2>",
+            "<h2 style='margin: 0;'>Individuals table</h2>",
             sizing_mode="stretch_width",
         )
-        return pn.Column(title, self.tooltip, table)
+        return pn.Column(
+            pn.Row(title, self.tooltip, align=("start", "end")), table
+        )
 
     def options_sidebar(self):
         return pn.Card(

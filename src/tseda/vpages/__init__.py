@@ -2,7 +2,6 @@ from . import (
     ignn,
     individuals,
     overview,
-    sample_sets,
     stats,
     structure,
     trees,
@@ -10,7 +9,6 @@ from . import (
 
 PAGES = [
     overview.OverviewPage,
-    sample_sets.SampleSetsPage,
     individuals.IndividualsPage,
     structure.StructurePage,
     ignn.IGNNPage,
