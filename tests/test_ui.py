@@ -23,13 +23,10 @@ def test_component(page, port, ds):
 
     page.set_viewport_size({"width": 1920, "height": 1080})
 
-    page.get_by_role("button", name="Sample Sets").click()
+    page.get_by_role("button", name="Individuals & sets").click()
+    expect(page.get_by_text("Map options").nth(0)).to_be_visible()
+    expect(page.get_by_text("Original population ID").nth(0)).to_be_visible()
     expect(page.get_by_text("Create new sample set").nth(0)).to_be_visible()
-    expect(page.get_by_text("predefined").nth(0)).to_be_visible()
-
-    page.get_by_role("button", name="Individuals").click()
-    expect(page.get_by_text("Data modification").nth(0)).to_be_visible()
-    expect(page.get_by_text("Population ID").nth(0)).to_be_visible()
 
     page.get_by_role("button", name="Structure").click()
     expect(page.get_by_text("GNN cluster plot").nth(0)).to_be_visible()

@@ -78,9 +78,15 @@ class SampleSetsTable(Viewer):
     }
 
     create_sample_set_textinput = param.String(
-        doc="Enter name of new sample set. Press Enter (⏎) to create.",
+        doc="Enter name of new sample set. Press Enter (⏎) to create",
         default=None,
         label="Create new sample set",
+    )
+
+    create_sample_set_warning = pn.pane.Alert(
+        "If the new sample set does not immediately show, click Update below",
+        alert_type="warning",
+        visible=False,
     )
 
     sample_set_warning = pn.pane.Alert(
@@ -88,8 +94,6 @@ class SampleSetsTable(Viewer):
         alert_type="warning",
         visible=False,
     )
-
-    page_size = param.Selector(objects=[10, 20, 50, 100], default=20)
 
     table = param.DataFrame()
 
@@ -108,9 +112,10 @@ class SampleSetsTable(Viewer):
             ),
         )
 
-    @pn.depends("page_size", "create_sample_set_textinput")  # , "columns")
+    @pn.depends("create_sample_set_textinput")
     def __panel__(self):
         if self.create_sample_set_textinput is not None:
+            self.create_sample_set_warning.visible = True
             previous_names = [
                 self.table.name[i] for i in range(len(self.table))
             ]
@@ -141,19 +146,28 @@ class SampleSetsTable(Viewer):
             self.data,
             layout="fit_data_table",
             selectable=True,
-            page_size=self.page_size,
+            page_size=10,
             pagination="remote",
             margin=10,
             formatters=self.formatters,
             editors=self.editors,
+            configuration={
+                "rowHeight": 40,
+            },
+            height=500,
+        )
+        title = pn.pane.HTML(
+            "<h2 style='margin: 0;'>Sample set table</h2>",
+            sizing_mode="stretch_width",
         )
         return pn.Column(
-            pn.pane.Markdown("### Sample Set Table"), self.tooltip, table
+            pn.Row(title, self.tooltip, align=("start", "end")),
+            table,
         )
 
     def get_ids(self):
         if isinstance(self.table, pd.DataFrame):
-            return [i for i in range(len(self.table["name"].tolist()))]
+            return self.table.index.values.tolist()
         else:
             raise TypeError("self.table is not a valid pandas DataFrame.")
 
@@ -181,8 +195,8 @@ class SampleSetsTable(Viewer):
     def sidebar(self):
         return pn.Column(
             pn.Card(
-                self.param.page_size,
                 self.param.create_sample_set_textinput,
+                self.create_sample_set_warning,
                 title="Sample sets table options",
                 collapsed=False,
                 header_background=config.SIDEBAR_BACKGROUND,
@@ -270,7 +284,7 @@ class IndividualsTable(Viewer):
         options=[],
     )
     population_from = pn.widgets.Select(
-        name="Population ID",
+        name="Original population ID",
         value=None,
         sizing_mode="stretch_width",
         # description=("Reassign individuals with this population ID."),
@@ -281,8 +295,12 @@ class IndividualsTable(Viewer):
         sizing_mode="stretch_width",
         # description=("Reassign individuals to this sample set ID."),
     )
-    mod_update_button = pn.widgets.Button(name="Update")
-    restore_button = pn.widgets.Button(name="Restore", button_type="danger")
+    mod_update_button = pn.widgets.Button(
+        name="Update", button_type="success", margin=(10, 10)
+    )
+    restore_button = pn.widgets.Button(
+        name="Restore", button_type="danger", margin=(10, 10)
+    )
 
     data_mod_warning = pn.pane.Alert(
         """Please enter a valid population ID and
@@ -455,10 +473,12 @@ class IndividualsTable(Viewer):
             header_filters=self.filters,
         )
         title = pn.pane.HTML(
-            "<h2 style='margin: 0;'>Individuals Table</h2>",
+            "<h2 style='margin: 0;'>Individuals table</h2>",
             sizing_mode="stretch_width",
         )
-        return pn.Column(title, self.tooltip, table)
+        return pn.Column(
+            pn.Row(title, self.tooltip, align=("start", "end")), table
+        )
 
     def options_sidebar(self):
         return pn.Card(
@@ -480,7 +500,12 @@ class IndividualsTable(Viewer):
             pn.Card(
                 self.modification_header,
                 pn.Row(self.population_from, self.sample_set_to),
-                pn.Column(self.mod_update_button, self.restore_button),
+                pn.Row(
+                    pn.Spacer(width=132),
+                    self.restore_button,
+                    self.mod_update_button,
+                    align="end",
+                ),
                 collapsed=False,
                 title="Data modification",
                 header_background=config.SIDEBAR_BACKGROUND,

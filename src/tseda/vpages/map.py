@@ -94,7 +94,7 @@ class GeoMap(View):
         return pn.Card(
             self.param.tiles_selector,
             self.refresh_button,
-            collapsed=False,
+            collapsed=True,
             title="Map options",
             header_background=config.SIDEBAR_BACKGROUND,
             active_header_background=config.SIDEBAR_BACKGROUND,
