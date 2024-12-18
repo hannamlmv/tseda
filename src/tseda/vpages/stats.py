@@ -29,7 +29,7 @@ pn.extension(sizing_mode="stretch_width")
 # TODO: make sure this is safe
 def eval_comparisons(comparisons):
     """Evaluate comparisons parameter."""
-    evaluated = ast.literal_eval(str(comparisons).replace("-", ","))
+    evaluated = ast.literal_eval(str(comparisons).replace(" & ", ","))
     return [tuple(map(int, item.split(","))) for item in evaluated]
 
 
@@ -287,7 +287,7 @@ class MultiwayStats(View):
         sample sets in the `individuals_table`."""
         sample_sets = self.datastore.individuals_table.sample_sets()
         all_comparisons = list(
-            f"{x}-{y}"
+            f"{x} & {y}"
             for x, y in itertools.combinations(
                 list(sample_sets.keys()),
                 2,
